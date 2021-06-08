@@ -65,7 +65,7 @@ objects:
     strategy:
       dockerStrategy:
         from:
-          kind: ImageStreamTag
+          kind: DockerImage
           name: registry.redhat.io/openshift4/ose-jenkins-agent-base:latest
       type: Docker
     successfulBuildsHistoryLimit: 3

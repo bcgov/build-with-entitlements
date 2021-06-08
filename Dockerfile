@@ -18,20 +18,31 @@ ENV PATH=$HOME/.local/bin/:$PATH \
     LC_ALL=en_US.UTF-8 \
     LANG=en_US.UTF-8 
 
+# Copy entitlements
+COPY ./etc-pki-entitlement /etc/pki/entitlement
+
+# Copy subscription manager configurations
+COPY ./rhsm-conf /etc/rhsm
+COPY ./rhsm-ca /etc/rhsm/ca
+
 # We need to call 2 (!) yum commands before being able to enable repositories properly
 # This is a workaround for https://bugzilla.redhat.com/show_bug.cgi?id=1479388
-RUN yum repolist > /dev/null && \
+RUN rm /etc/rhsm-host && \
+    yum repolist > /dev/null && \
     yum install -y yum-utils && \
-    yum-config-manager --disable \* &> /dev/null && \
-    yum-config-manager --enable rhel-server-rhscl-7-rpms && \
-    yum-config-manager --enable rhel-7-server-rpms && \
-    yum-config-manager --enable rhel-7-server-optional-rpms && \
-    INSTALL_PKGS="nss_wrapper httpd24 httpd24-httpd-devel httpd24-mod_ssl httpd24-mod_auth_kerb \
-        httpd24-mod_ldap httpd24-mod_session atlas-devel gcc-gfortran libffi-devel libtool-ltdl" && \
+    # yum-config-manager --disable \* &> /dev/null && \
+    # subscription-manager repos --list && \
+    subscription-manager repos --enable=rhel-8-for-x86_64-appstream-rpms && \
+    yum search dotnet && \
+    yum search libunwind && \
+    # yum-config-manager --enable rhel-server-rhscl-7-rpms && \
+    # yum-config-manager --enable rhel-7-server-rpms && \
+    # yum-config-manager --enable rhel-7-server-optional-rpms && \
+    INSTALL_PKGS="dotnet-runtime-5.0.x86_64 dotnet-sdk-5.0" && \
     yum install -y --setopt=tsflags=nodocs $INSTALL_PKGS && \
     rpm -V $INSTALL_PKGS && \
     # Remove redhat-logos (httpd dependency) to keep image size smaller.
-    rpm -e --nodeps redhat-logos && \
+    # rpm -e --nodeps redhat-logos && \
     yum clean all -y && \
     rm -rf /var/cache/yum
 
