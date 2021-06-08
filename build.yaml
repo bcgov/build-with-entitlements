@@ -1,0 +1,95 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: ${NAME}
+objects:
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    name: ${NAME}
+  # spec:
+  #   lookupPolicy:
+  #     local: false
+  #   tags:
+  #   - from:
+  #       kind: DockerImage
+  #       name: registry.access.redhat.com/openshift3/jenkins-slave-base-rhel7:v3.10.72-3
+  #     importPolicy: {}
+  #     name: 'v3.10.72-3'
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    creationTimestamp: null
+    name: ${NAME}
+    labels:
+        shared: 'true'
+  spec:
+    lookupPolicy:
+      local: false
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    name: ${NAME}
+  spec:
+    failedBuildsHistoryLimit: 3
+    output:
+      to:
+        kind: ImageStreamTag
+        name: ${NAME}:${OUTPUT_TAG}
+    postCommit: {}
+    resources:
+      limits:
+        cpu: "1"
+        memory: 1Gi
+      requests:
+        cpu: "1"
+        memory: 1Gi
+    runPolicy: SerialLatestOnly
+    source:
+      secrets:
+        - secret:
+            name: platform-services-controlled-etc-pki-entitlement
+          destinationDir: etc-pki-entitlement
+      configMaps:
+        - configMap:
+            name: platform-services-controlled-rhsm-conf
+          destinationDir: rhsm-conf
+        - configMap:
+            name: platform-services-controlled-rhsm-ca
+          destinationDir: rhsm-ca
+      contextDir: ${SOURCE_CONTEXT_DIR}
+      git:
+        ref: ${SOURCE_REPOSITORY_REF}
+        uri: ${SOURCE_REPOSITORY_URL}
+      type: Git
+    strategy:
+      dockerStrategy:
+        from:
+          kind: ImageStreamTag
+          name: registry.redhat.io/openshift4/ose-jenkins-agent-base:latest
+      type: Docker
+    successfulBuildsHistoryLimit: 3
+    triggers:
+    - type: ConfigChange
+    - imageChange: {}
+      type: ImageChange
+parameters:
+- description: A name used for all objects
+  displayName: Name
+  name: NAME
+  required: true
+  value: build-with-entitlements
+- description: A version used for the image tags
+  displayName: version
+  name: OUTPUT_TAG
+  required: true
+  value: latest
+- name: SOURCE_REPOSITORY_URL
+  required: true
+  value: https://github.com/bcgov/build-with-entitlements.git
+- name: SOURCE_CONTEXT_DIR
+  required: true
+  value: /
+- name: SOURCE_REPOSITORY_REF
+  required: false
+  value: master
