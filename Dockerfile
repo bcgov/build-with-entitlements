@@ -44,7 +44,8 @@ RUN rm /etc/rhsm-host && \
     # Remove redhat-logos (httpd dependency) to keep image size smaller.
     # rpm -e --nodeps redhat-logos && \
     yum clean all -y && \
-    rm -rf /var/cache/yum
+    rm -rf /var/cache/yum && \
+    rm -rf /etc/pki/entitlement /etc/rhsm /etc/rhsm/ca
 
 EXPOSE 8080
 
